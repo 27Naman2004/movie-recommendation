@@ -1,6 +1,8 @@
-Flask==2.3.2
+setuptools>=65.0
+wheel
+build
+flask==2.3.2
 gunicorn==21.2.0
 numpy==1.24.4
-pandas==2.0.3
-scikit-learn==1.3.2
-joblib==1.3.2
+pandas
+requests
