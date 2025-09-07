@@ -3,6 +3,6 @@ wheel
 build
 flask==2.3.2
 gunicorn==21.2.0
-numpy==1.24.4
+numpy>=1.26
 pandas
 requests
