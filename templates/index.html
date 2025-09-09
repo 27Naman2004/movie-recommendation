@@ -719,35 +719,143 @@
             let moviesList = [];
             let currentTimeout = null;
             
-            // Simulate movie data fetch (replace with actual API call)
-            function fetchMovies() {
-                // In a real implementation, this would fetch from your backend
-                return new Promise((resolve) => {
-                    setTimeout(() => {
-                        // Sample movie list - replace with actual data from your backend
-                        const sampleMovies = [
-                            "The Shawshank Redemption", "The Godfather", "The Dark Knight", 
-                            "Pulp Fiction", "Fight Club", "Forrest Gump", "Inception",
-                            "The Matrix", "Goodfellas", "The Lord of the Rings: The Fellowship of the Ring",
-                            "Star Wars: Episode V - The Empire Strikes Back", "The Avengers", 
-                            "Parasite", "Interstellar", "Whiplash", "The Silence of the Lambs",
-                            "Saving Private Ryan", "Django Unchained", "The Green Mile",
-                            "Gladiator", "The Departed", "The Prestige", "The Lion King",
-                            "Alien", "Avengers: Endgame", "Back to the Future", "Raiders of the Lost Ark"
-                        ];
-                        resolve(sampleMovies);
-                    }, 500);
-                });
-            }
+            // Movie database with genres and sample recommendations
+            const movieDatabase = {
+                "The Shawshank Redemption": {
+                    genres: ["Drama"],
+                    recommendations: [
+                        {
+                            title: "The Green Mile",
+                            rating: "8.6",
+                            release: "1999",
+                            tagline: "Miracles do happen.",
+                            poster: "https://image.tmdb.org/t/p/w500/velWPhVMQeQKcxggNEU8YmIo52R.jpg"
+                        },
+                        {
+                            title: "Forrest Gump",
+                            rating: "8.8",
+                            release: "1994",
+                            tagline: "Life is like a box of chocolates...",
+                            poster: "https://image.tmdb.org/t/p/w500/saHP97rTPS5eLmrLQEcANmKrsFl.jpg"
+                        },
+                        {
+                            title: "The Godfather",
+                            rating: "9.2",
+                            release: "1972",
+                            tagline: "An offer you can't refuse.",
+                            poster: "https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg"
+                        }
+                    ]
+                },
+                "The Dark Knight": {
+                    genres: ["Action", "Crime", "Drama"],
+                    recommendations: [
+                        {
+                            title: "Inception",
+                            rating: "8.8",
+                            release: "2010",
+                            tagline: "Your mind is the scene of the crime.",
+                            poster: "https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg"
+                        },
+                        {
+                            title: "Captain America: The Winter Soldier",
+                            rating: "7.7",
+                            release: "2014",
+                            tagline: "In heroes we trust.",
+                            poster: "https://image.tmdb.org/t/p/w500/5TQ6YDmymBpnF005OyoB7ohZps9.jpg"
+                        },
+                        {
+                            title: "Logan",
+                            rating: "8.1",
+                            release: "2017",
+                            tagline: "His time has come.",
+                            poster: "https://image.tmdb.org/t/p/w500/gGBu0hKw9BGddG8RkRAMX7B6NDB.jpg"
+                        }
+                    ]
+                },
+                "Inception": {
+                    genres: ["Action", "Adventure", "Sci-Fi"],
+                    recommendations: [
+                        {
+                            title: "Interstellar",
+                            rating: "8.6",
+                            release: "2014",
+                            tagline: "Mankind was born on Earth. It was never meant to die here.",
+                            poster: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg"
+                        },
+                        {
+                            title: "The Matrix",
+                            rating: "8.7",
+                            release: "1999",
+                            tagline: "Welcome to the Real World.",
+                            poster: "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
+                        },
+                        {
+                            title: "Tenet",
+                            rating: "7.4",
+                            release: "2020",
+                            tagline: "Time runs out.",
+                            poster: "https://image.tmdb.org/t/p/w500/k68nPLbIST6NP96JmTxmZijEvCA.jpg"
+                        }
+                    ]
+                },
+                "Pulp Fiction": {
+                    genres: ["Crime", "Drama"],
+                    recommendations: [
+                        {
+                            title: "Reservoir Dogs",
+                            rating: "8.3",
+                            release: "1992",
+                            tagline: "Every dog has his day.",
+                            poster: "https://image.tmdb.org/t/p/w500/xi8Iu6qyTfyZVDVy60raIOYJJmk.jpg"
+                        },
+                        {
+                            title: "Kill Bill: Vol. 1",
+                            rating: "8.2",
+                            release: "2003",
+                            tagline: "Go for the kill.",
+                            poster: "https://image.tmdb.org/t/p/w500/v7TaX8kXMXs5yFFGR41guUDNcnB.jpg"
+                        },
+                        {
+                            title: "Fight Club",
+                            rating: "8.5",
+                            release: "1999",
+                            tagline: "Mischief. Mayhem. Soap.",
+                            poster: "https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg"
+                        }
+                    ]
+                },
+                "The Avengers": {
+                    genres: ["Action", "Adventure", "Sci-Fi"],
+                    recommendations: [
+                        {
+                            title: "Guardians of the Galaxy",
+                            rating: "8.0",
+                            release: "2014",
+                            tagline: "All heroes start somewhere.",
+                            poster: "https://image.tmdb.org/t/p/w500/r7vmZjiyZw9rpJMQJdXpjgiCOk9.jpg"
+                        },
+                        {
+                            title: "Thor: Ragnarok",
+                            rating: "7.9",
+                            release: "2017",
+                            tagline: "Thor's world is about to explode.",
+                            poster: "https://image.tmdb.org/t/p/w500/rzRwTcFvttcN1ZpX2xv4j3tSdJu.jpg"
+                        },
+                        {
+                            title: "Black Panther",
+                            rating: "7.3",
+                            release: "2018",
+                            tagline: "Long live the king.",
+                            poster: "https://image.tmdb.org/t/p/w500/uxzzxijgPIY7slzFvMotPv8wjKA.jpg"
+                        }
+                    ]
+                }
+            };
             
             // Initialize the application
-            async function init() {
-                try {
-                    moviesList = await fetchMovies();
-                } catch (error) {
-                    console.error('Error fetching movies:', error);
-                    showError('Failed to load movie database. Please refresh the page.');
-                }
+            function init() {
+                moviesList = Object.keys(movieDatabase);
             }
             
             init();
@@ -842,66 +950,20 @@
                 loader.style.display = 'block';
                 recommendBtn.disabled = true;
                 
-                // Simulate API call (replace with actual fetch to your backend)
-                simulateRecommendationRequest(movie);
-            });
-            
-            // Simulate API call to get recommendations
-            function simulateRecommendationRequest(movie) {
-                // This is a simulation - replace with actual API call to your backend
+                // Get recommendations from our database
                 setTimeout(() => {
-                    // Sample recommendation data
-                    const sampleRecommendations = [
-                        {
-                            title: "The Shawshank Redemption",
-                            rating: "9.3",
-                            release: "1994",
-                            tagline: "Fear can hold you prisoner. Hope can set you free.",
-                            poster: "https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg"
-                        },
-                        {
-                            title: "The Godfather",
-                            rating: "9.2",
-                            release: "1972",
-                            tagline: "An offer you can't refuse.",
-                            poster: "https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg"
-                        },
-                        {
-                            title: "The Dark Knight",
-                            rating: "9.0",
-                            release: "2008",
-                            tagline: "Why so serious?",
-                            poster: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg"
-                        },
-                        {
-                            title: "Pulp Fiction",
-                            rating: "8.9",
-                            release: "1994",
-                            tagline: "Just because you are a character doesn't mean you have character.",
-                            poster: "https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg"
-                        },
-                        {
-                            title: "Fight Club",
-                            rating: "8.8",
-                            release: "1999",
-                            tagline: "Mischief. Mayhem. Soap.",
-                            poster: "https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg"
-                        },
-                        {
-                            title: "Inception",
-                            rating: "8.8",
-                            release: "2010",
-                            tagline: "Your mind is the scene of the crime.",
-                            poster: "https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg"
-                        }
-                    ];
+                    const movieData = movieDatabase[movie];
                     
-                    displayRecommendations(sampleRecommendations);
+                    if (movieData && movieData.recommendations && movieData.recommendations.length > 0) {
+                        displayRecommendations(movieData.recommendations);
+                    } else {
+                        showError('No recommendations found. Please try another movie.');
+                    }
                     
                     loader.style.display = 'none';
                     recommendBtn.disabled = false;
                 }, 2000); // Simulate 2 second delay
-            }
+            });
             
             // Display recommendations
             function displayRecommendations(recommendations) {
