@@ -1,0 +1,8 @@
+setuptools>=65.0
+wheel
+build
+flask==2.3.2
+gunicorn==21.2.0
+numpy>=1.26
+pandas
+requests
