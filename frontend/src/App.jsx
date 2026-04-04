@@ -11,7 +11,10 @@ function App() {
   const [error, setError] = useState(null)
 
   // Production Backend URL
-  const API_BASE = "https://movie-recommendation-2-qi8r.onrender.com";
+  // Use localhost if running locally, otherwise use production Render URL
+  const API_BASE = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") 
+    ? "http://localhost:5000" 
+    : "https://movie-recommendation-2-qi8r.onrender.com";
 
   // Fetch all movie titles for autocomplete
   useEffect(() => {
@@ -179,6 +182,9 @@ function App() {
                         src={movie.poster}
                         alt={movie.title}
                         className="movie-poster"
+                        onError={(e) => {
+                          e.target.src = "https://via.placeholder.com/500x750/1a1a2e/ffffff?text=Image+Load+Error";
+                        }}
                       />
                       <div className="poster-overlay">
                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#fbbf24', fontWeight: 800, marginBottom: '8px' }}>

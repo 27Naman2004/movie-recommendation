@@ -14,11 +14,8 @@ load_dotenv()
 
 app = Flask(__name__)
 # Allow requests from your Vercel frontend
-CORS(app, resources={r"/api/*": {"origins": [
-    "https://moviesmatch.vercel.app",
-    "https://movie-recommendation-vmjw.vercel.app", 
-    "http://localhost:5173"
-]}})
+# Allow all origins to avoid CORS issues with different Vercel deployment URLs
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Load pickles
 try:
@@ -157,7 +154,7 @@ def keep_alive_ping():
             print(f"Keep-alive: Ping failed: {e}")
         
         # Sleep with a bit of jitter (e.g. 60-120 seconds)
-        jitter_sleep = random.randint(60, 120)
+        jitter_sleep = random.randint(10,20)
         time.sleep(jitter_sleep)
 
 # Start Keep-Alive thread if not in debug reload
