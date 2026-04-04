@@ -29,8 +29,12 @@ A "Rich Aesthetics" frontend built with **React** and **Vite**:
 - **Micro-Animations**: Smooth, professional transitions powered by `framer-motion`.
 - **Responsive Layout**: Seamless experience across mobile, tablet, and desktop.
 
-### 🚤 Render "Boat" Keep-Alive
-Integrated a dedicated **Background Pinger** that sends a keep-awake request every 14 minutes, ensuring the Render free-tier instance never sleeps and is always ready for users.
+### 🚤 Render Keep-Alive (Zero Cold-Start)
+Integrated a robust, self-pinging background bot that prevents Render's free-tier from sleeping:
+- **Smart Pinging**: Automatically detects the service's external URL via `RENDER_EXTERNAL_URL`.
+- **Randomized Jitter**: Pings every 1 to 2 minutes with randomized intervals to ensure consistent activity.
+- **Header Spoofing**: Uses custom User-Agent headers to ensure pings are processed as valid traffic.
+- **Cold-Start Elimination**: By staying awake, the backend avoids the typical 50-second startup delay.
 
 ---
 
@@ -84,6 +88,13 @@ npm run dev
 
 - **Frontend**: Configured for Vercel (Auto-deploy on push).
 - **Backend**: Configured for Render via `Procfile` (`web: gunicorn app:app`).
+
+#### 💡 How to verify the Keep-Alive Bot:
+1. Go to your **Render Dashboard**.
+2. Click on your **CineMatch Backend** service.
+3. Open the **Logs** tab.
+4. You should see periodic messages: `Keep-alive: Ping successful! (HTTP 200)`.
+5. If you see these, your backend will **never** sleep, and users will never experience the 50-second "wake-up" delay.
 
 ---
 

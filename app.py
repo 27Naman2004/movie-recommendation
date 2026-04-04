@@ -120,24 +120,41 @@ def get_recommendation():
 
 # --- Keep-Alive Bot for Render ---
 def keep_alive_ping():
-    """Background task to ping the server and keep it awake on Render."""
-    # We ping the root URL or /ping (localhost if running locally)
-    # On Render, the app will have an external URL. 
-    # For now, we use a simple loop. In production, provide the RENDER_EXTERNAL_URL env var.
+    """Background task to ping the server and keep it awake on Render's free tier."""
+    import random
+    
+    # Render provides this env var by default - use it if available
     url = os.getenv("RENDER_EXTERNAL_URL")
     if not url:
-        # Fallback to your provided Render URL
+        # Fallback to the provided project URL
         url = "https://movie-recommendation-2-qi8r.onrender.com/ping"
+    elif not url.endswith('/ping'):
+        url = f"{url.rstrip('/')}/ping"
     
     print(f"Keep-alive bot started. Target: {url}")
+    
+    # Give the server a few seconds to fully spin up before our first ping
+    time.sleep(10)
+    
     while True:
         try:
-            # Ping every 1 minutes (Render sleeps after 15 mins)
-            time.sleep(1 * 60) 
-            requests.get(url, timeout=1)
-            print("Keep-alive bot: Ping successful!")
+            # Pings every 1 to 2 minutes (Randomized jitter avoids fixed bot patterns)
+            # Render blocks services after 15 mins of inactivity, so 2 mins is very safe.
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) KeepAlive/1.0',
+            }
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                print(f"Keep-alive: Ping successful! (HTTP {response.status_code})")
+            else:
+                print(f"Keep-alive: Ping failed with status {response.status_code}")
+                
         except Exception as e:
-            print(f"Keep-alive bot: Ping failed: {e}")
+            print(f"Keep-alive: Ping failed: {e}")
+        
+        # Sleep with a bit of jitter (e.g. 60-120 seconds)
+        jitter_sleep = random.randint(60, 120)
+        time.sleep(jitter_sleep)
 
 # Start Keep-Alive thread if not in debug reload
 if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
