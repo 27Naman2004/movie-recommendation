@@ -14,7 +14,11 @@ load_dotenv()
 
 app = Flask(__name__)
 # Allow requests from your Vercel frontend
-CORS(app, resources={r"/api/*": {"origins": ["https://movie-recommendation-vmjw.vercel.app", "http://localhost:5173"]}})
+CORS(app, resources={r"/api/*": {"origins": [
+    "https://moviesmatch.vercel.app",
+    "https://movie-recommendation-vmjw.vercel.app", 
+    "http://localhost:5173"
+]}})
 
 # Load pickles
 try:
