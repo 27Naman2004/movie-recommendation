@@ -13,7 +13,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for React frontend
+# Allow requests from your Vercel frontend
+CORS(app, resources={r"/api/*": {"origins": ["https://movie-recommendation-vmjw.vercel.app", "http://localhost:5173"]}})
 
 # Load pickles
 try:
@@ -125,8 +126,8 @@ def keep_alive_ping():
     # For now, we use a simple loop. In production, provide the RENDER_EXTERNAL_URL env var.
     url = os.getenv("RENDER_EXTERNAL_URL")
     if not url:
-        print("Keep-alive bot: RENDER_EXTERNAL_URL not set. Pinging local server...")
-        url = "http://localhost:5000/ping"
+        # Fallback to your provided Render URL
+        url = "https://movie-recommendation-2-qi8r.onrender.com/ping"
     
     print(f"Keep-alive bot started. Target: {url}")
     while True:

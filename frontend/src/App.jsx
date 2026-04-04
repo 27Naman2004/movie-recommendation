@@ -10,9 +10,12 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  // Production Backend URL
+  const API_BASE = "https://movie-recommendation-2-qi8r.onrender.com";
+
   // Fetch all movie titles for autocomplete
   useEffect(() => {
-    fetch('/api/movies')
+    fetch(`${API_BASE}/api/movies`)
       .then(res => res.json())
       .then(data => setAllMovies(data))
       .catch(err => console.error("Error fetching movies:", err))
@@ -37,7 +40,7 @@ function App() {
     setSuggestions([])
     
     try {
-      const response = await fetch('/api/recommend', {
+      const response = await fetch(`${API_BASE}/api/recommend`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ movie: movieTitle })
