@@ -53,9 +53,9 @@ def preprocess_and_train(top_k=30):
     for feature in ['genres', 'keywords', 'cast', 'crew']:
         movies[feature] = movies[feature].apply(lambda x: [re.sub(r'\s+', '', str(i)) for i in x])
 
-    # Weighted overview for more context
+    # Weighted overview for more context - prioritizing genres and keywords for specialized recommendations
     movies['tags'] = movies.apply(
-        lambda row: row['overview'] * 2 + row['genres'] + row['keywords'] + row['cast'] + row['crew'],
+        lambda row: row['overview'] + row['genres'] * 3 + row['keywords'] * 2 + row['cast'] + row['crew'],
         axis=1
     )
 
@@ -72,16 +72,16 @@ def preprocess_and_train(top_k=30):
 
     print("Vectorizing text...")
     tfidf = TfidfVectorizer(
-        max_features=3000,
+        max_features=5000,
         stop_words='english',
-        ngram_range=(1, 2),
+        ngram_range=(1, 3),
         min_df=2,
-        max_df=0.8
+        max_df=0.75
     )
     vectors = tfidf.fit_transform(df['tags'])
 
     print("Reducing dimensions...")
-    svd = TruncatedSVD(n_components=200, random_state=42)
+    svd = TruncatedSVD(n_components=250, random_state=42)
     reduced_vectors = svd.fit_transform(vectors)
 
     print("Computing top-k similarity neighbors...")

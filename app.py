@@ -1,86 +1,148 @@
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 import pickle
 import pandas as pd
 import requests
 import time
+import threading
+from functools import lru_cache
+from concurrent.futures import ThreadPoolExecutor
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for React frontend
 
 # Load pickles
-movies = pickle.load(open('models/movie_dict.pkl', 'rb'))
-similarity = pickle.load(open('models/similarity.pkl', 'rb'))
+try:
+    movies = pickle.load(open('models/movie_dict.pkl', 'rb'))
+    similarity = pickle.load(open('models/similarity.pkl', 'rb'))
+    if isinstance(movies, dict):
+        movies = pd.DataFrame(movies)
+except Exception as e:
+    print(f"Error loading models: {e}")
+    # Fallback or initialization error handling
+    movies = pd.DataFrame(columns=['movie_id', 'title'])
+    similarity = {}
 
-# If movies is a dictionary, convert to DataFrame
-if isinstance(movies, dict):
-    movies = pd.DataFrame(movies)
+# TMDB API Configuration
+TMDB_API_KEY = "6a6cd6353aee4c59453e91e8371e3781" # Keep your existing key
+BASE_URL = "https://api.themoviedb.org/3/movie/"
 
-# Function to fetch movie details from TMDB
+# Optimized Session for API calls
+session = requests.Session()
+
+@lru_cache(maxsize=500)
 def fetch_movie_details(movie_id):
+    """Fetch movie details with caching and error handling."""
+    if pd.isna(movie_id) or movie_id == '':
+        return get_placeholder_movie()
+        
     try:
-        if pd.isna(movie_id) or movie_id == '':
-            return get_placeholder_movie()
-            
-        url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key=6a6cd6353aee4c59453e91e8371e3781&language=en-US"
-        response = requests.get(url, timeout=10)
+        url = f"{BASE_URL}{movie_id}?api_key={TMDB_API_KEY}&language=en-US"
+        response = session.get(url, timeout=5)
         
         if response.status_code == 200:
             data = response.json()
             return {
-                "poster": "https://image.tmdb.org/t/p/w500/" + data.get('poster_path') if data.get('poster_path') else "https://via.placeholder.com/300x450/2c5364/ffffff?text=No+Image",
+                "id": int(movie_id),
+                "poster": "https://image.tmdb.org/t/p/w500" + data.get('poster_path') if data.get('poster_path') else "https://via.placeholder.com/500x750/1a1a2e/ffffff?text=No+Poster",
                 "title": data.get("title", "Unknown Title"),
                 "rating": round(data.get("vote_average", 0), 1) if data.get("vote_average") else "N/A",
                 "release": data.get("release_date", "N/A")[:4] if data.get("release_date") else "N/A",
-                "tagline": data.get("tagline", "No tagline available"),
+                "tagline": data.get("tagline", ""),
                 "overview": data.get("overview", "No description available.")
             }
-        else:
-            return get_placeholder_movie()
-    except:
-        return get_placeholder_movie()
+    except Exception as e:
+        print(f"API Error for {movie_id}: {e}")
+    
+    return get_placeholder_movie()
 
 def get_placeholder_movie():
     return {
-        "poster": "https://via.placeholder.com/300x450/2c5364/ffffff?text=No+Image",
-        "title": "Movie Not Found",
+        "poster": "https://via.placeholder.com/500x750/1a1a2e/ffffff?text=Movie+Image",
+        "title": "Information Unavailable",
         "rating": "N/A",
         "release": "N/A",
-        "tagline": "No information available",
-        "overview": "Could not fetch movie details from TMDB."
+        "tagline": "",
+        "overview": "Could not fetch details from TMDB."
     }
 
-# Recommendation function
-def recommend(movie_title, top_n=5):
+# Recommendation logic
+def recommend_movies(movie_title, top_n=8):
     if movie_title not in movies['title'].values:
         return []
     
     idx = movies[movies['title'] == movie_title].index[0]
-    distances = list(enumerate(similarity[idx]))
-    distances = sorted(distances, reverse=True, key=lambda x: x[1])
     
-    recommended_movies = []
-    for i in distances[1:top_n+1]:
-        movie_id = movies.iloc[i[0]].movie_id
-        movie_details = fetch_movie_details(movie_id)
-        recommended_movies.append(movie_details)
-        time.sleep(0.1)  # Small delay to avoid overwhelming the API
+    # Check if similarity is sparse (dict) or matrix (array)
+    if isinstance(similarity, dict):
+        # We stored top-k neighbors in a dict for optimization in preprocess.py
+        neighbors = similarity.get(idx, [])[:top_n]
+        recommended_ids = [int(movies.iloc[i].movie_id) for i, score in neighbors]
+    else:
+        # Fallback for full matrix
+        distances = sorted(list(enumerate(similarity[idx])), reverse=True, key=lambda x: x[1])
+        recommended_ids = [int(movies.iloc[i[0]].movie_id) for i in distances[1:top_n+1]]
+    
+    # Fetch details in parallel for optimization
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        results = list(executor.map(fetch_movie_details, recommended_ids))
         
-    return recommended_movies
+    return results
 
 # Routes
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return "Movie Recommendation API is running! 🚀"
 
-@app.route('/movies')
+@app.route('/ping')
+def ping():
+    return jsonify({"status": "alive", "time": time.time()})
+
+@app.route('/api/movies', methods=['GET'])
 def get_movies():
-    movie_titles = movies['title'].tolist()
-    return jsonify(movie_titles)
+    # Return all titles for search autocomplete
+    return jsonify(movies['title'].tolist())
 
-@app.route('/recommend', methods=['POST'])
+@app.route('/api/recommend', methods=['POST'])
 def get_recommendation():
-    movie = request.json.get('movie')
-    recommendations = recommend(movie)
+    data = request.json
+    selected_movie = data.get('movie')
+    if not selected_movie:
+        return jsonify({'error': 'No movie selected'}), 400
+        
+    recommendations = recommend_movies(selected_movie)
     return jsonify({'recommendations': recommendations})
 
+# --- Keep-Alive Bot for Render ---
+def keep_alive_ping():
+    """Background task to ping the server and keep it awake on Render."""
+    # We ping the root URL or /ping (localhost if running locally)
+    # On Render, the app will have an external URL. 
+    # For now, we use a simple loop. In production, provide the RENDER_EXTERNAL_URL env var.
+    url = os.getenv("RENDER_EXTERNAL_URL")
+    if not url:
+        print("Keep-alive bot: RENDER_EXTERNAL_URL not set. Pinging local server...")
+        url = "http://localhost:5000/ping"
+    
+    print(f"Keep-alive bot started. Target: {url}")
+    while True:
+        try:
+            # Ping every 14 minutes (Render sleeps after 15 mins)
+            time.sleep(14 * 60) 
+            requests.get(url, timeout=10)
+            print("Keep-alive bot: Ping successful!")
+        except Exception as e:
+            print(f"Keep-alive bot: Ping failed: {e}")
+
+# Start Keep-Alive thread if not in debug reload
+if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
+    bot_thread = threading.Thread(target=keep_alive_ping, daemon=True)
+    bot_thread.start()
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Default Flask port is 5000
+    app.run(host='0.0.0.0', port=5000, debug=True)
