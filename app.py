@@ -132,9 +132,9 @@ def keep_alive_ping():
     print(f"Keep-alive bot started. Target: {url}")
     while True:
         try:
-            # Ping every 14 minutes (Render sleeps after 15 mins)
-            time.sleep(14 * 60) 
-            requests.get(url, timeout=10)
+            # Ping every 1 minutes (Render sleeps after 15 mins)
+            time.sleep(1 * 60) 
+            requests.get(url, timeout=1)
             print("Keep-alive bot: Ping successful!")
         except Exception as e:
             print(f"Keep-alive bot: Ping failed: {e}")
